@@ -30,8 +30,12 @@ namespace ProcessMessages
             string picture = data?.picture;
             string location = data?.location;
             string type = data?.type;
-            string minvalue = data?.minvalue;
-            string maxvalue = data?.maxvalue;
+            string minvalue1 = data?.minvalue;
+            string maxvalue1 = data?.maxvalue;
+            string minvalue2 = data?.minvalue;
+            string maxvalue2 = data?.maxvalue;
+            string minvalue3 = data?.minvalue;
+            string maxvalue3 = data?.maxvalue;
             TableUtils utils = new TableUtils(storageConnectionString);
             try
             {
@@ -48,8 +52,12 @@ namespace ProcessMessages
                         Picture = picture,
                         Location = location,
                         Type = type,
-                        MinValue = minvalue,
-                        MaxValue = maxvalue
+                        MinValue1 = minvalue1,
+                        MaxValue1 = maxvalue1,
+                        MinValue2 = minvalue2,
+                        MaxValue2 = maxvalue2,
+                        MinValue3 = minvalue3,
+                        MaxValue3 = maxvalue3
                     });
                 }
             }

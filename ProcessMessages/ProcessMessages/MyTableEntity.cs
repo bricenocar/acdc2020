@@ -10,7 +10,11 @@ namespace ProcessMessages
         public string Picture { get; set; }
         public string Location { get; set; }
         public string Type { get; set; }
-        public string MinValue { get; set; }
-        public string MaxValue { get; set; }
+        public string MinValue1 { get; set; }
+        public string MaxValue1 { get; set; }
+        public string MinValue2 { get; set; }
+        public string MaxValue2 { get; set; }
+        public string MinValue3 { get; set; }
+        public string MaxValue3 { get; set; }
     }
 }

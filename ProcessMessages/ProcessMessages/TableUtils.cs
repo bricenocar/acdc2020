@@ -60,7 +60,7 @@ namespace ProcessMessages
         public async Task<TableResult> GetDevice(string value)
         {
             AuthTable();
-            var operation = TableOperation.Retrieve(DEFAULT_PARTITION, value);
+            var operation = TableOperation.Retrieve<MyTableEntity>(DEFAULT_PARTITION, value);
             TableResult result = await mytable.ExecuteAsync(operation);
             if (result != null)
             {

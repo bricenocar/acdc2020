@@ -25,28 +25,38 @@ namespace ProcessMessages
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
-            var connString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
+            var appHubconnString = Environment.GetEnvironmentVariable("ACDC2020EventHubConnectionString");
+            var tableConnString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
             // Get list of devices available
             listOfDevices = new List<DeviceEntity>();
-            registryManager = RegistryManager.CreateFromConnectionString(connString);
+            registryManager = RegistryManager.CreateFromConnectionString(appHubconnString);
             var devices = await GetDevicesInfo();
 
             // Check that devices already exists in table
-            TableUtils utils = new TableUtils(connString);
+            TableUtils utils = new TableUtils(tableConnString);
+            List<MyTableEntity> iotDevices = new List<MyTableEntity>();
             foreach (var device in devices)
             {
                 try
                 {
-                    TableResult iotDevice = await utils.GetDevice(device.Id);
+                    TableResult iotDevice = await utils.GetDevice(device.Id);                    
                     if (iotDevice.Result == null)
                     {
-                        await utils.Insert(new MyTableEntity
+                        log.LogInformation($"'{device.Id}' Not found, proceeding to create...");
+                        var newDevice = new MyTableEntity
                         {
                             PartitionKey = "Triksterne bryggeri",
                             RowKey = device.Id,
                             ETag = "*"
-                        });
+                        };
+                        await utils.Insert(newDevice);
+                        iotDevices.Add(newDevice);
+                    } else
+                    {
+                        log.LogInformation("Found! The name is: " + ((MyTableEntity)iotDevice.Result).Name);
+                        iotDevices.Add((MyTableEntity)iotDevice.Result);
                     }
+                    
                 }
                 catch (Exception e)
                 {
@@ -54,7 +64,7 @@ namespace ProcessMessages
                 }
             }
 
-            var jsonToReturn = JsonConvert.SerializeObject(devices);
+            var jsonToReturn = JsonConvert.SerializeObject(iotDevices);
 
             return devices != null
                 ? (ActionResult)new OkObjectResult(jsonToReturn)

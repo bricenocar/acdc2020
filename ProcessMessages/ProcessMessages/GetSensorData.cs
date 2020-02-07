@@ -11,11 +11,11 @@ using IoTHubTrigger = Microsoft.Azure.WebJobs.EventHubTriggerAttribute;
 
 namespace ProcessMessages
 {
-    public static class Function1
+    public static class GetSensorData
     {
         private static CloudTable mytable = null;
 
-        [FunctionName("Function1")]
+        [FunctionName("GetSensorData")]
         public static void Run([IoTHubTrigger("samples-workitems", Connection = "ACDC2020-IOTHUB_events_IOTHUB")]EventData message, ILogger log)
         {
             log.LogInformation($"C# IoT Hub trigger function processed a message: {Encoding.UTF8.GetString(message.Body.Array)}");
@@ -67,13 +67,10 @@ namespace ProcessMessages
             }
             catch (FormatException)
             {
-                Console.WriteLine("Invalid storage account information provided. Please confirm the AccountName and AccountKey are valid in the app.config file - then restart the application.");
                 throw;
             }
             catch (ArgumentException)
             {
-                Console.WriteLine("Invalid storage account information provided. Please confirm the AccountName and AccountKey are valid in the app.config file - then restart the sample.");
-                Console.ReadLine();
                 throw;
             }
 
@@ -82,7 +79,7 @@ namespace ProcessMessages
 
         private static async Task Create(TempHumidity value)
         {
-            await CreateOrUpdate(new MyTableEntity
+            await CreateOrUpdate(new MessagesEntity
             {
                 PartitionKey = "Triksterne bryggeri",
                 RowKey = Guid.NewGuid().ToString(),
@@ -93,13 +90,13 @@ namespace ProcessMessages
             });
         }
 
-        private static async Task CreateOrUpdate(MyTableEntity myTableOperation)
+        private static async Task CreateOrUpdate(MessagesEntity myTableOperation)
         {
             var operation = TableOperation.InsertOrReplace(myTableOperation);
             await mytable.ExecuteAsync(operation);
         }
 
-        public class MyTableEntity : TableEntity
+        public class MessagesEntity : TableEntity
         {
             public string DeviceId { get; set; }
             public double Value1 { get; set; }
