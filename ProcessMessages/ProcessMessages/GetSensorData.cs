@@ -96,13 +96,7 @@ namespace ProcessMessages
             await mytable.ExecuteAsync(operation);
         }
 
-        public class MessagesEntity : TableEntity
-        {
-            public string DeviceId { get; set; }
-            public double Value1 { get; set; }
-            public double Value2 { get; set; }
-            public double Value3 { get; set; }
-        }
+     
         public class TempHumidity
         {
             public string DeviceId { get; set; }

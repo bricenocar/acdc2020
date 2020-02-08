@@ -7,73 +7,70 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using Microsoft.Azure.Devices;
+using System.Collections.Generic;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json.Serialization;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace ProcessMessages
 {
-    public static class GetDevices
+    public static class GetAllLastDataFromDevices
     {
+        private static CloudTable mytable = null;
         static RegistryManager registryManager;
         private static List<DeviceEntity> listOfDevices;
 
-        [FunctionName("GetDevices")]
+        [FunctionName("GetAllLastDataFromDevices")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
             var appHubconnString = Environment.GetEnvironmentVariable("ACDC2020EventHubConnectionString");
-            var tableConnString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
-            // Get list of devices available
+            var storageConnectionString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
             listOfDevices = new List<DeviceEntity>();
+            // Get list of devices available
+            List<SensorFullData> iotDevices = new List<SensorFullData>();
             registryManager = RegistryManager.CreateFromConnectionString(appHubconnString);
             var devices = await GetDevicesInfo();
-
-            // Check that devices already exists in table
-            TableUtils utils = new TableUtils(tableConnString);
-            List<MyTableEntity> iotDevices = new List<MyTableEntity>();
             foreach (var device in devices)
             {
-                try
+                TableUtils utils = new TableUtils(storageConnectionString);
+                TableResult iotDevice = await utils.GetDevice(device.Id);
+                IList<MessagesEntity> deviceData = await utils.GetLastDataFromDevice(device.Id);
+                foreach (var item in deviceData)
                 {
-                    TableResult iotDevice = await utils.GetDevice(device.Id);                    
-                    if (iotDevice.Result == null)
+                    iotDevices.Add(new SensorFullData()
                     {
-                        log.LogInformation($"'{device.Id}' Not found, proceeding to create...");
-                        var newDevice = new MyTableEntity
-                        {
-                            PartitionKey = "Triksterne bryggeri",
-                            RowKey = device.Id,
-                            ETag = "*"
-                        };
-                        await utils.Insert(newDevice);
-                        iotDevices.Add(newDevice);
-                    } else
-                    {
-                        log.LogInformation("Found! The name is: " + ((MyTableEntity)iotDevice.Result).Name);
-                        iotDevices.Add((MyTableEntity)iotDevice.Result);
-                    }
-                    
-                }
-                catch (Exception e)
-                {
-                    log.LogError(e.Message);
+                        DeviceId = item.DeviceId,
+                        Name = ((MyTableEntity)iotDevice.Result).Name,
+                        Description = ((MyTableEntity)iotDevice.Result).Description,
+                        Picture = ((MyTableEntity)iotDevice.Result).Picture,
+                        Location = ((MyTableEntity)iotDevice.Result).Location,
+                        Type = ((MyTableEntity)iotDevice.Result).Type,
+                        MinValue1 = ((MyTableEntity)iotDevice.Result).MinValue1,
+                        MinValue2 = ((MyTableEntity)iotDevice.Result).MinValue2,
+                        MinValue3 = ((MyTableEntity)iotDevice.Result).MinValue3,
+                        MaxValue1 = ((MyTableEntity)iotDevice.Result).MaxValue1,
+                        MaxValue2 = ((MyTableEntity)iotDevice.Result).MaxValue2,
+                        MaxValue3 = ((MyTableEntity)iotDevice.Result).MaxValue3,
+                        Value1 = item.Value1,
+                        Value2 = item.Value2,
+                        Value3 = item.Value3,
+                    });
                 }
             }
+
             var jsonSerializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
-            
+
             var jsonToReturn = JsonConvert.SerializeObject(iotDevices, jsonSerializerSettings);
 
-            return devices != null
-                ? (ActionResult)new OkObjectResult(jsonToReturn)
-                : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+
+            return (ActionResult)new OkObjectResult(jsonToReturn);
         }
 
         public static async Task<List<DeviceEntity>> GetDevicesInfo()
@@ -141,5 +138,23 @@ namespace ProcessMessages
             }
         }
 
+        public class SensorFullData : TableEntity
+        {
+            public string DeviceId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public string Picture { get; set; }
+            public string Location { get; set; }
+            public string Type { get; set; }
+            public string MinValue1 { get; set; }
+            public string MaxValue1 { get; set; }
+            public string MinValue2 { get; set; }
+            public string MaxValue2 { get; set; }
+            public string MinValue3 { get; set; }
+            public string MaxValue3 { get; set; }
+            public double Value1 { get; set; }
+            public double Value2 { get; set; }
+            public double Value3 { get; set; }
+        }
     }
 }

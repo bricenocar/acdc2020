@@ -24,18 +24,18 @@ namespace ProcessMessages
             var storageConnectionString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            string deviceId = data?.deviceid;
+            string deviceId = data?.deviceId;
             string name = data?.name;
             string description = data?.description;
             string picture = data?.picture;
             string location = data?.location;
             string type = data?.type;
-            string minvalue1 = data?.minvalue;
-            string maxvalue1 = data?.maxvalue;
-            string minvalue2 = data?.minvalue;
-            string maxvalue2 = data?.maxvalue;
-            string minvalue3 = data?.minvalue;
-            string maxvalue3 = data?.maxvalue;
+            string minvalue1 = data?.minValue1;
+            string maxvalue1 = data?.maxValue1;
+            string minvalue2 = data?.minValue2;
+            string maxvalue2 = data?.maxValue2;
+            string minvalue3 = data?.minValue3;
+            string maxvalue3 = data?.maxValue3;
             TableUtils utils = new TableUtils(storageConnectionString);
             try
             {
@@ -68,7 +68,7 @@ namespace ProcessMessages
 
             return deviceId != null
                 ? (ActionResult)new OkObjectResult($"Device with ID: {deviceId} has been successfully updated")
-                : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+                : new BadRequestObjectResult("Please pass a device id");
         }        
     }
 }

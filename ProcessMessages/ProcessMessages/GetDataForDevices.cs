@@ -7,73 +7,53 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Microsoft.WindowsAzure.Storage.Table;
 using System.Collections.Generic;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json.Serialization;
 
 namespace ProcessMessages
 {
-    public static class GetDevices
+    public static class GetDataForDevices
     {
+        private static CloudTable mytable = null;
         static RegistryManager registryManager;
         private static List<DeviceEntity> listOfDevices;
 
-        [FunctionName("GetDevices")]
+        [FunctionName("GetDataForDevices")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
             var appHubconnString = Environment.GetEnvironmentVariable("ACDC2020EventHubConnectionString");
-            var tableConnString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
-            // Get list of devices available
+            var storageConnectionString = Environment.GetEnvironmentVariable("ACDC2020StorageConnectionString");
             listOfDevices = new List<DeviceEntity>();
+            // Get list of devices available
+            List<MessagesEntity> iotDevices = new List<MessagesEntity>();
             registryManager = RegistryManager.CreateFromConnectionString(appHubconnString);
             var devices = await GetDevicesInfo();
-
-            // Check that devices already exists in table
-            TableUtils utils = new TableUtils(tableConnString);
-            List<MyTableEntity> iotDevices = new List<MyTableEntity>();
             foreach (var device in devices)
             {
-                try
+                TableUtils utils = new TableUtils(storageConnectionString);
+                IList<MessagesEntity> deviceData = await utils.GetLastDataFromDevice(device.Id);
+                foreach (var item in deviceData)
                 {
-                    TableResult iotDevice = await utils.GetDevice(device.Id);                    
-                    if (iotDevice.Result == null)
-                    {
-                        log.LogInformation($"'{device.Id}' Not found, proceeding to create...");
-                        var newDevice = new MyTableEntity
-                        {
-                            PartitionKey = "Triksterne bryggeri",
-                            RowKey = device.Id,
-                            ETag = "*"
-                        };
-                        await utils.Insert(newDevice);
-                        iotDevices.Add(newDevice);
-                    } else
-                    {
-                        log.LogInformation("Found! The name is: " + ((MyTableEntity)iotDevice.Result).Name);
-                        iotDevices.Add((MyTableEntity)iotDevice.Result);
-                    }
-                    
-                }
-                catch (Exception e)
-                {
-                    log.LogError(e.Message);
+                    iotDevices.Add(item);
                 }
             }
+
             var jsonSerializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
-            
+
             var jsonToReturn = JsonConvert.SerializeObject(iotDevices, jsonSerializerSettings);
 
-            return devices != null
-                ? (ActionResult)new OkObjectResult(jsonToReturn)
-                : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+
+            return (ActionResult)new OkObjectResult(jsonToReturn);
+
         }
 
         public static async Task<List<DeviceEntity>> GetDevicesInfo()
@@ -140,6 +120,5 @@ namespace ProcessMessages
                 return $"Device ID = {this.Id}, Primary Key = {this.PrimaryKey}, Secondary Key = {this.SecondaryKey}, Primary Thumbprint = {this.PrimaryThumbPrint}, Secondary Thumbprint = {this.SecondaryThumbPrint}, ConnectionString = {this.ConnectionString}, ConnState = {this.ConnectionState}, ActivityTime = {this.LastActivityTime}, LastConnState = {this.LastConnectionStateUpdatedTime}, LastStateUpdatedTime = {this.LastStateUpdatedTime}, MessageCount = {this.MessageCount}, State = {this.State}, SuspensionReason = {this.SuspensionReason}\r\n";
             }
         }
-
     }
 }

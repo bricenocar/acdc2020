@@ -3,6 +3,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ProcessMessages
@@ -18,7 +19,7 @@ namespace ProcessMessages
             _connString = storageConnectionString;
         }
 
-        private CloudTable AuthTable()
+        private CloudTable AuthTable(string tableName)
         {
             try
             {
@@ -26,8 +27,7 @@ namespace ProcessMessages
 
                 CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
 
-                mytable = tableClient.GetTableReference("DeviceManager");
-
+                mytable = tableClient.GetTableReference(tableName);
                 return mytable;
             }
             catch
@@ -35,6 +35,8 @@ namespace ProcessMessages
                 return null;
             }
         }
+
+        
 
         public CloudStorageAccount CreateStorageAccountFromConnectionString(string storageConnectionString)
         {
@@ -59,7 +61,7 @@ namespace ProcessMessages
         }
         public async Task<TableResult> GetDevice(string value)
         {
-            AuthTable();
+            AuthTable("DeviceManager");
             var operation = TableOperation.Retrieve<MyTableEntity>(DEFAULT_PARTITION, value);
             TableResult result = await mytable.ExecuteAsync(operation);
             if (result != null)
@@ -69,6 +71,17 @@ namespace ProcessMessages
 
             return null;
         }
+
+        public async Task<List<MessagesEntity>> GetLastDataFromDevice(string deviceId)
+        {
+            AuthTable("DeviceInputManager");
+            string filter = $"DeviceId eq '{deviceId}' and Timestamp ge datetime'{DateTime.UtcNow.AddMinutes(-10000).ToString("o")}'";
+            TableQuery<MessagesEntity> query = new TableQuery<MessagesEntity>().Where(filter).Take(1);
+            var result = await mytable.ExecuteQuerySegmentedAsync(query, null);
+
+            return result.Results;
+        }
+        
 
         public async Task Update(MyTableEntity value)
         {
