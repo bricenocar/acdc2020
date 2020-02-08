@@ -88,6 +88,13 @@ namespace ProcessMessages
             var operation = TableOperation.Replace(value);
             await mytable.ExecuteAsync(operation);
         }
+
+        public async Task Merge(MyTableEntity value)
+        {
+            var operation = TableOperation.Merge(value);
+            await mytable.ExecuteAsync(operation);
+        }
+
         public async Task Insert(MyTableEntity value)
         {
             var operation = TableOperation.InsertOrReplace(value);

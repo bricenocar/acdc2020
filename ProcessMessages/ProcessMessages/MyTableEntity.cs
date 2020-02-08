@@ -15,5 +15,7 @@ namespace ProcessMessages
         public string MaxValue2 { get; set; }
         public string MinValue3 { get; set; }
         public string MaxValue3 { get; set; }
+        public int Rating { get; set; }
+        public int RatingQuantity { get; set; }
     }
 }
