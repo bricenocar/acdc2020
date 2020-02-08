@@ -58,6 +58,8 @@ namespace ProcessMessages
                         Value1 = item.Value1,
                         Value2 = item.Value2,
                         Value3 = item.Value3,
+                        Rating = ((MyTableEntity)iotDevice.Result).Rating,
+                        RatingQuantity = ((MyTableEntity)iotDevice.Result).RatingQuantity
                     });
                 }
             }
@@ -155,6 +157,8 @@ namespace ProcessMessages
             public double Value1 { get; set; }
             public double Value2 { get; set; }
             public double Value3 { get; set; }
+            public int Rating { get; set; }
+            public int RatingQuantity { get; set; }
         }
     }
 }
