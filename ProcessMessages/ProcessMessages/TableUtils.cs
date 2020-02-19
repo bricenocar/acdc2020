@@ -75,7 +75,7 @@ namespace ProcessMessages
         public async Task<List<MessagesEntity>> GetLastDataFromDevice(string deviceId)
         {
             AuthTable("DeviceInputManager");
-            string filter = $"DeviceId eq '{deviceId}' and Timestamp ge datetime'{DateTime.UtcNow.AddMinutes(-10000).ToString("o")}'";
+            string filter = $"DeviceId eq '{deviceId}' and Timestamp ge datetime'{DateTime.UtcNow.AddMinutes(-10).ToString("o")}'";
             TableQuery<MessagesEntity> query = new TableQuery<MessagesEntity>().Where(filter).Take(1);
             var result = await mytable.ExecuteQuerySegmentedAsync(query, null);
 
